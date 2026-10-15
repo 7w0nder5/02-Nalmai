@@ -1,0 +1,30 @@
+{
+  "arcade_provider": {
+    "description": "华立成绩读取方式",
+    "type": "string",
+    "options": ["maimai_py", "unavailable"],
+    "default": "maimai_py",
+    "hint": "需要 SGWCMAID 更新时选择 maimai_py。"
+  },
+  "arcade_http_proxy": {
+    "description": "华立请求 HTTP 代理",
+    "type": "string",
+    "default": "",
+    "hint": "网络无需代理时保持为空。"
+  },
+  "http_timeout_seconds": {
+    "description": "外部接口超时秒数",
+    "type": "float",
+    "default": 15.0
+  },
+  "cooldown_seconds": {
+    "description": "同一用户同一高消耗指令冷却秒数",
+    "type": "float",
+    "default": 30.0
+  },
+  "max_concurrent_requests": {
+    "description": "全局同时处理的高消耗请求数量",
+    "type": "int",
+    "default": 2
+  }
+}

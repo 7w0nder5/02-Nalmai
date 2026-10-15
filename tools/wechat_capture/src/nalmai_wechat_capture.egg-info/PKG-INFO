@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: nalmai-wechat-capture
+Version: 0.2.0
+Summary: One-shot local Wahlap WeChat HTML collector for Nalmai
+Requires-Python: <3.13,>=3.12
+Requires-Dist: curl-cffi==0.16.1
+Requires-Dist: httpx==0.28.1
+Requires-Dist: lxml==6.1.3
+Requires-Dist: mitmproxy==12.1.1
+Provides-Extra: dev
+Requires-Dist: pytest==9.1.1; extra == "dev"

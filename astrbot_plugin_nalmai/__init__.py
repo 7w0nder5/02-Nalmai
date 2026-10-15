@@ -1,0 +1,1 @@
+"""Nalmai AstrBot plugin package."""

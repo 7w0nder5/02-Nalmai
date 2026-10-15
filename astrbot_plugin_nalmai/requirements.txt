@@ -1,0 +1,6 @@
+cryptography>=46.0.0
+httpx>=0.28.0
+lxml>=6.0.0
+pillow>=11.0.0
+maimai-py==1.5.2
+maimai-ffi==0.7.1

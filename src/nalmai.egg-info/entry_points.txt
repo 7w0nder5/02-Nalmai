@@ -1,0 +1,3 @@
+[console_scripts]
+nalmai = nalmai.main:main
+nalmai-qq = nalmai.qq_main:main

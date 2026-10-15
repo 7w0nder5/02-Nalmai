@@ -1,0 +1,2 @@
+[console_scripts]
+nalmai-wechat-capture = nalmai_wechat_capture.main:main

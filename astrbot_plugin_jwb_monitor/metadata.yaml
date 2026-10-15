@@ -1,0 +1,9 @@
+name: astrbot_plugin_jwb_monitor
+display_name: 交我办场馆空余提醒
+desc: 读取本机视觉监控状态，通过 Nalmai 当前 AstrBot QQ 私聊发送空余提醒。
+version: 0.1.0
+author: Nalmai
+repo: ""
+astrbot_version: ">=4.18,<5"
+support_platforms:
+  - aiocqhttp

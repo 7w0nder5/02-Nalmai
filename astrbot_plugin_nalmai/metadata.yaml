@@ -1,0 +1,9 @@
+name: astrbot_plugin_nalmai
+display_name: Nalmai 舞萌成绩同步
+desc: 使用个人 QQ OneBot 接入，支持水鱼绑定、SGWC 成绩更新和 B50 图片。
+version: 0.1.0
+author: Nalmai
+repo: ""
+astrbot_version: ">=4.16,<5"
+support_platforms:
+  - aiocqhttp

@@ -1,0 +1,17 @@
+{
+  "recipient_qq": {
+    "description": "固定接收空余提醒的 QQ 号",
+    "type": "string",
+    "default": ""
+  },
+  "monitor_state_url": {
+    "description": "交我办视觉监控本机状态地址",
+    "type": "string",
+    "default": "http://127.0.0.1:3178/api/integrations/astrbot/state"
+  },
+  "poll_interval_seconds": {
+    "description": "读取视觉监控状态的间隔秒数",
+    "type": "int",
+    "default": 5
+  }
+}

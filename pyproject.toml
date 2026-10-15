@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=75.0.0", "wheel>=0.44.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nalmai"
+version = "0.1.6"
+description = "QQ bot core for importing maimai DX scores into Diving-Fish and rendering B50"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "cryptography>=46.0.0",
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "lxml>=6.0.0",
+    "pillow>=11.0.0",
+    "uvicorn>=0.34.0",
+]
+
+[project.optional-dependencies]
+qq = [
+    "nonebot2[httpx,websockets]==2.5.0",
+    "nonebot-adapter-qq==1.7.2",
+]
+arcade = [
+    "maimai-py==1.5.2",
+    "maimai-ffi==0.7.1",
+]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+]
+
+[project.scripts]
+nalmai = "nalmai.main:main"
+nalmai-qq = "nalmai.qq_main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+nalmai = ["assets/fonts/*.ttf", "assets/fonts/*.txt"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"

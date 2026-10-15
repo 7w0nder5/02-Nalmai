@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=75.0.0", "wheel>=0.44.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nalmai-wechat-capture"
+version = "0.2.0"
+description = "One-shot local Wahlap WeChat HTML collector for Nalmai"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "curl-cffi==0.16.1",
+    "httpx==0.28.1",
+    "lxml==6.1.3",
+    "mitmproxy==12.1.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1"]
+
+[project.scripts]
+nalmai-wechat-capture = "nalmai_wechat_capture.main:main"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

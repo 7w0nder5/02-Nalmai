@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+src/nalmai_wechat_capture/__init__.py
+src/nalmai_wechat_capture/capture.py
+src/nalmai_wechat_capture/local_api.py
+src/nalmai_wechat_capture/main.py
+src/nalmai_wechat_capture.egg-info/PKG-INFO
+src/nalmai_wechat_capture.egg-info/SOURCES.txt
+src/nalmai_wechat_capture.egg-info/dependency_links.txt
+src/nalmai_wechat_capture.egg-info/entry_points.txt
+src/nalmai_wechat_capture.egg-info/requires.txt
+src/nalmai_wechat_capture.egg-info/top_level.txt
+tests/test_capture.py

@@ -1,0 +1,16 @@
+.env
+.venv/
+.venv-wechat/
+runtime/
+data/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/*.db
+data/*.sqlite3
+data/*.png
+data/qq-events/
+data/wechat-capture/
+data/shared-assets/
+*.log
+*.zip
