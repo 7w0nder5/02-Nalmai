@@ -1,0 +1,276 @@
+# Nalmai
+
+Nalmai 是一个舞萌 DX 成绩同步 Bot，当前实现报告对应版本为 1.6。
+
+首期命令契约：
+
+| 命令 | 推荐会话 | 行为 |
+|---|---|---|
+| `@Nalmai /help` | 群聊或私聊 | 查看指令说明、使用位置和当前开放状态 |
+| `/bind <QQ号码> <Import-Token>` | 私聊 | 验证并加密保存水鱼绑定 |
+| `/pair` | 私聊 | 生成 8 位、5 分钟有效的一次性配对码 |
+| `@Nalmai /pair <配对码>` | QQ 群 | 将当前群身份关联到私聊绑定；用后即失效 |
+| `SGWCMAID...` | 私聊/安全入口 | 启用机台适配器后读取基础成绩并热更新水鱼 |
+| `/wechat` | 私聊 | 创建 5 分钟有效的本机 Windows 微信 OAuth 更新任务 |
+| `@Nalmai /b50` 或 `@Nalmai b50` | 群聊或私聊 | 查询并生成同一套高信息密度 B50 PNG |
+| `@Nalmai /status` | 群聊或私聊 | 查看绑定与最近同步状态 |
+| `@Nalmai /unbind` | 私聊 | 删除本地绑定和加密凭据 |
+
+## 当前完成范围
+
+- 严格命令解析与群聊敏感凭据拦截。
+- 水鱼 `Import-Token` 验证、成绩上传和 B50 查询客户端。
+- SQLite 绑定与任务状态存储。
+- Fernet 带认证加密存储 `Import-Token`。
+- 按用户串行执行、SGWC HMAC 短期幂等判断。
+- B50 五列 PNG 渲染器：曲名、封面、达成率、定数、RA、评级、FC/FS、
+  DX 星数、DX 分、歌曲 ID、版本、难度与 SD/DX 类型。
+- `Nalmai Aurora` B50 主题：自绘紫青舞台渐变、柔光圆环、B35/B15 分色标题、
+  难度色条与卡片阴影；保留已采集的头像、姓名框、称号、牌子和版本素材。
+- AstrBot 中 `/nalmai b50` 与 `@机器人 b50` 共用同一生成入口；优先显示发送者
+  QQ 头像，无法取得时依次使用已采集的华立头像和 Nalmai 默认头像。
+- SD/DX、评级及 FC/FS 状态使用已由实测华立页面确认路径的官方状态图标；
+  没有确认图标路径的状态继续使用文字徽标，不进行素材猜测。
+- 管理员一次微信授权可把收藏页中明确标记为延迟加载的头像、姓名框、背景框
+  与搭档图片同步到 AstrBot 本机共享素材库；之后所有群友生成 B50 都可复用，
+  不需要每位群友分别进行微信 OAuth。
+- B50 卡片按难度使用淡彩渐变，B35/B15 使用蓝色与暖色分区，曲名、达成率、
+  DX 分、PC、版本等核心文字已放大；共享库存在搭档图片时会稳定选取展示。
+- FastAPI 私密提交接口。
+- QQ 官方适配器 1.7.2、WebSocket 启动入口和最小权限 intent 配置。
+- QQ 事件本机采集：默认只写确定性 HMAC 脱敏副本，原始事件需显式开启。
+- QQ 群聊 `group_openid + member_openid` 与私聊 `user_openid` 的准确事件映射。
+- 私聊生成、群聊消费的一次性身份配对码；只保存 HMAC 摘要并在 5 分钟后失效。
+- QQ `/help`、`/bind`、`/pair`、`/status`、`/unbind` 与 `/b50` 业务路由。
+- QQ B50 PNG 本地文件消息发送。
+- 公开群友模式的高消耗指令按用户冷却和全局并发保护；不同用户互不占用
+  对方的冷却时间。
+- 可选 `maimai-py==1.5.2` + `maimai-ffi==0.7.1` 机台适配器，支持
+  `SGWCMAID...` 基础成绩读取。
+- 华立微信 HTML 解析器，可从实测页面读取达成率、DX 分、FC、FS、谱面类型，
+  并从详情页读取单谱面 PC 与 DX 星数。
+- 本机单用户 OAuth 闭环：QQ `/wechat` 一次性任务、本机受保护 API、
+  水鱼自动上传、当前 B50 详情定向采集和 PC/网页星数合并。
+- 单元测试与模拟端到端测试。
+- 真实 QQ WebSocket 群聊与私聊 `/help` 已分别验证成功。
+
+## 两条华立数据路线的边界
+
+`SGWCMAID...` 机台路线使用可选的 `maimai-py + maimai-ffi`。其中
+`maimai-ffi` 是闭源二进制模块；当前返回数据明确只有基础成绩，不包含新的
+FC、FS、PC 次数。Nalmai 的处理规则是：
+
+1. 只上传实际取得的基础成绩。
+2. FC/FS 缺失时保留水鱼已有值，不清空，也不推测。
+3. PC 在 B50 中显示为 `—`，除非响应中存在明确整数值。
+4. 二维码必须由已绑定用户在私聊主动提交；这代表写入授权，但不声称华立
+   账号与水鱼账号存在可由接口验证的同一身份字段。
+
+Windows 微信 OAuth 路线是独立的全开源网页路线。2026-09-23 的真实脱敏页面
+已验证：成绩列表含达成率、DX 分、FC、FS、评级与 SD/DX 类型；曲目详情页含
+单谱面游戏次数（PC）及 DX 星数。两种凭据不能互换，因此只发送 SGWC 时不能
+从微信网页补出这些字段。
+玩家成绩更新通过 `/wechat` 明确创建一次性关联；授权参数和 Cookie
+仅存在于采集器内存，本地数据库只保存任务状态、令牌 HMAC 摘要与
+B50 谱面的 PC/网页星数。
+
+公共美术资源与玩家成绩分开处理：管理员运行一次采集器即可把收藏页列出的
+公共图片写入 AstrBot 的 `data/plugin_data/astrbot_plugin_nalmai/shared_assets/`。
+该目录是服务器共享缓存，不保存 Cookie 或 OAuth 参数，也不会进入公开插件包。
+素材清单记录原始路径并标记 `redistribution_granted: false`。
+
+## 安装
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install --upgrade pip
+.\.venv\Scripts\python -m pip install -e ".[dev]"
+```
+
+已经验证的解析版本记录在 `requirements.lock`。生产发布还需在目标 OS/CPU/Python ABI 上下载包并登记每个 wheel 的 SHA-256 与 SBOM。
+
+生成密钥：
+
+```powershell
+.\.venv\Scripts\python scripts\generate_keys.py
+```
+
+把输出写入本机 `.env`。不要把 `.env`、`Import-Token` 或 `SGWCMAID...` 提交到仓库或聊天记录。
+
+## 运行测试
+
+```powershell
+.\.venv\Scripts\python -m pytest
+```
+
+## 启动安全提交 API
+
+```powershell
+$env:PYTHONPATH = "src"
+.\.venv\Scripts\python -m nalmai.main
+```
+
+默认监听 `127.0.0.1:8000`。生产环境必须由 Caddy/Nginx 提供 HTTPS，禁止直接暴露 SQLite、Redis 或内部 API。
+
+## 接入真实 QQ Bot
+
+安装锁定的 QQ 依赖：
+
+```powershell
+.\.venv\Scripts\python -m pip install -e ".[qq,dev]"
+```
+
+如果要启用 SGWC 基础成绩热更新，额外安装锁定的机台依赖：
+
+```powershell
+.\.venv\Scripts\python -m pip install -e ".[qq,arcade,dev]"
+```
+
+然后在现有 `.env` 中增加：
+
+```text
+NALMAI_ARCADE_PROVIDER=maimai_py
+NALMAI_ARCADE_HTTP_PROXY=
+```
+
+`maimai-ffi` 是上游发布的闭源平台 wheel，Nalmai 不打包或反编译它；不接受
+该依赖时保持 `NALMAI_ARCADE_PROVIDER=unavailable`。
+
+复制 `.env.example` 为 `.env`，完成已有的 Nalmai 密钥配置，然后只在本机填写
+`QQ_BOTS` 中的 `id` 与 `secret`。它们分别对应 QQ 管理端的 AppID 与
+AppSecret。当前锁定的 `nonebot-adapter-qq==1.7.2` 配置模型还要求存在
+小写 `token` 兼容字段；该字段必须按模板保留为空字符串，不填写其他凭据。
+
+启动 WebSocket：
+
+```powershell
+.\.venv\Scripts\python -m nalmai.qq_main
+```
+
+或者在已安装命令入口后运行：
+
+```powershell
+nalmai-qq
+```
+
+运行器固定使用 `~httpx+~websockets`，并把框架日志级别限制为 `ERROR`，避免
+NoneBot 的普通事件日志或解析警告输出用户标识和消息正文。连接与断开状态由
+Nalmai 自己输出不含标识符的提示。首次验证只发送：
+
+```text
+群聊：@Nalmai /help
+私聊：/status
+测试群：@Nalmai /status
+```
+
+首次验证通过后，按以下顺序使用：
+
+```text
+私聊：/bind <QQ号码> <Import-Token>
+私聊：SGWCMAID...
+私聊：/pair
+目标群：@Nalmai /pair <8位配对码>
+目标群：@Nalmai /status
+目标群：@Nalmai /b50
+```
+
+Import-Token 和 `SGWCMAID...` 不得发送到群聊。
+
+### 面向群友开放
+
+程序没有群友白名单。QQ 管理端允许公开使用后，每位群友按以下流程建立
+自己的独立绑定：
+
+```text
+1. 私聊 Nalmai：/bind <自己的QQ号码> <自己的Import-Token>
+2. 私聊 Nalmai：/pair
+3. 5 分钟内在目标群：@Nalmai /pair <8位配对码>
+4. 群内：@Nalmai /status
+5. 群内：@Nalmai /b50
+```
+
+每个 QQ 私聊身份、每个群成员身份以及水鱼绑定均单独隔离。群友不能读取
+或覆盖其他人的绑定。配对码只有 8 位、5 分钟有效且只能使用一次。
+
+公开运行默认使用以下保护值：
+
+```text
+NALMAI_QQ_EXPENSIVE_COOLDOWN_SECONDS=30
+NALMAI_QQ_MAX_CONCURRENT_EXPENSIVE=2
+```
+
+冷却只应用于 `/bind`、`SGWCMAID...`、`/wechat`、`/b50`；`/help`、
+`/status`、`/pair` 与 `/unbind` 不受该冷却影响。并发上限已满时，新请求会
+立即收到“稍后重试”，不会无限排队。
+
+QQ 机器人管理端的“服务范围”中，开启“允许被其他 QQ 用户添加使用”和
+“允许机器人被添加到任意群聊使用（提供公开服务）”。频道开关不是 Nalmai
+当前功能所需。按照管理端要求完成“隐私协议”后，再把机器人邀请到目标群。
+
+`/wechat` 仍是管理员辅助的本机功能：授权采集脚本只连接机器人主机的
+`127.0.0.1`，普通群友不能在自己的电脑上远程运行。群友日常自助更新应在
+私聊提交 `SGWCMAID...`，且机器人主机必须已经启用机台适配器。
+
+### QQ 事件文件
+
+- `data/qq-events/sanitized/`：默认生成。保留键名、层级、数组长度、空值和标量类型；非空值使用 HMAC 确定性替换。
+- `data/qq-events/private/`：默认不生成。只有同时设置 `NALMAI_QQ_CAPTURE_RAW=true` 且消息纯文本严格等于 `/status` 时才写入。
+- `/bind`、`SGWCMAID...`、`Import-Token`、`Authorization` 等标记即使误入事件，也会阻止原始文件落盘。
+- 整个 `data/qq-events/` 已加入 `.gitignore`。
+
+采集完成后保持 `NALMAI_QQ_CAPTURE_RAW=false`。只提交或发送
+`sanitized/` 中的文件，不发送 `private/` 中的文件。
+
+真实脱敏事件已确认：私聊使用 `author.user_openid`，群聊使用
+`group_openid + author.member_openid`；两者不相等且 `union_openid` 为空。
+因此 Nalmai 使用一次性码显式配对，不猜测跨场景身份关系。SQLite 只保存
+HMAC 化后的内部身份键，不保存 OpenID 原文。
+
+## Windows 微信全开源更新
+
+`tools/wechat_capture/` 使用微信 OAuth 获取临时网页会话。它向只监听
+`127.0.0.1` 的 Nalmai API 回传解析后成绩，上传水鱼后只读取当前
+B50 对应的详情页。脱敏 HTML 和清单仍会保留供本机审计；不写出
+Cookie、OAuth 参数或原始 HTML。
+
+当前脚本会向 Clash Verge 临时加载一条精确规则，只把
+`tgk-wcaime.wahlap.com:80` 转发到本机 `127.0.0.1:8080`。应用层仍只处理固定
+OAuth 回调路径；不安装代理根证书，不解密 HTTPS，也不记录其他请求。脚本在
+成功、失败或超时后都会恢复 Clash 原配置。
+
+首次安装，在项目目录的普通 PowerShell 中运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_wechat_capture.ps1
+```
+
+每次更新时，先确保 Nalmai QQ 进程正在运行，然后在 QQ 私聊发送：
+
+```text
+/wechat
+```
+
+看到“授权任务已创建”后，启动并登录 Windows 微信，再使用
+“以管理员身份运行”的 PowerShell：
+
+```powershell
+cd "C:\Users\Administrator\Desktop\ChatGPT项目\Nalmai"
+powershell -ExecutionPolicy Bypass -File .\scripts\run_wechat_capture.ps1
+```
+
+程序会先领取 QQ 创建的一次性任务。它先等待用户按 Enter，再即时
+生成短时有效的授权链接并复制到剪贴板。
+在 Windows 微信“文件传输助手”中立即粘贴、发送并点击。一次授权后程序自动
+停止，显示水鱼上传数量和已保存的 B50 详情数量，并输出：
+
+```text
+data\wechat-capture\nalmai-wechat-capture-时间.zip
+```
+
+完成后在 QQ 私聊发送 `/b50`。不要发送 `.env`、SGWC、Cookie、
+微信授权链接或其他代理日志。详细安全边界见
+`tools/wechat_capture/README.md`。
+
+## 许可证与第三方代码
+
+本仓库未预设 Nalmai 自身许可证。引入第三方实现前必须由项目方确定许可证策略并维护 `THIRD_PARTY_NOTICES.md` 与 SBOM。无明确许可证的仓库仅用于理解公开交互和测试场景，不复制其代码或资源。
